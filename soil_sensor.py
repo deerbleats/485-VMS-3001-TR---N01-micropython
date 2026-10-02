@@ -22,87 +22,49 @@ class the_soil_sensor():
         self.uartinit = self.UART.init(self.freq,bits = 8,parity = None,stop = 1)
     def write_cmd(self,cmd):
         self.UART.write(cmd)
-    
+
     def read_uart(self):
         return(self.UART.read())
 
-    
-    def the_soil_ph(self,test = None):
-        self.write_cmd(PH_DATA)
+
+    def _read_measurement(self, command, divisor):
+        """Read one value while retaining the original wire and error behavior."""
+        self.write_cmd(command)
         time.sleep(0.2)
-        soil_ph = self.read_uart()
+        response = self.read_uart()
         try:
-            ph_data = float(int(str(hex(soil_ph[3]).lstrip("0").lstrip("x") + hex(soil_ph[4]).lstrip("0").lstrip("x")) ,16)/10)
-            return(ph_data)
-        except TypeError as e:
-            return("error")
-    
-    def the_soil_water(self,test = None):
-        self.write_cmd(MOISTURE_DATA)
-        time.sleep(0.2)
-        soil_moisture_content = self.read_uart()
-        try:
-            water_data = float(int(str(hex(soil_moisture_content[3]).lstrip("0").lstrip("x") + hex(soil_moisture_content[4]).lstrip("0").lstrip("x")) ,16)/10)
-            return(water_data)
-        except TypeError as e:
-            return("error")
-    
-    def the_soil_temp(self,test = None):
-        self.write_cmd(TEMP_DATA)
-        time.sleep(0.2)
-        soil_temp = self.read_uart()
-        try:
-            temp_data = float(int(str(hex(soil_temp[3]).lstrip("0").lstrip("x") + hex(soil_temp[4]).lstrip("0").lstrip("x")) ,16)/10)
-            return(temp_data)
-        except TypeError as e:
-            return("error")
-    def the_soil_conductivity(self,test = None):
-        self.write_cmd(CONDUCTIVITY_DATA)
-        time.sleep(0.2)
-        soil_conductivity = self.read_uart()
-        try:
-            conductivitya_data = float(int(str(hex(soil_conductivity[3]).lstrip("0").lstrip("x") + hex(soil_conductivity[4]).lstrip("0").lstrip("x")) ,16)/10)
-            return(conductivitya_data)
-        except TypeError as e:
-            return("error")
-    
-    def the_soil_nitrogen(self,test = None):
-        self.write_cmd(NITROGEN_DATA)
-        time.sleep(0.2)
-        soil_nitrogen_content = self.read_uart()
-        try:
-            nitrogen_data = float(int(str(hex(soil_nitrogen_content[3]).lstrip("0").lstrip("x") + hex(soil_nitrogen_content[4]).lstrip("0").lstrip("x")) ,16)/100)
-            return(nitrogen_data)
-        except TypeError as e:
-            return("error")
-    def the_soil_phosphorus(self,test = None):
-        self.write_cmd(PHOSPHORUS_DATA)
-        time.sleep(0.2)
-        soil_phosphorus_content = self.read_uart()
-        try:
-            phosphorus_data = float(int(str(hex(soil_phosphorus_content[3]).lstrip("0").lstrip("x") + hex(soil_phosphorus_content[4]).lstrip("0").lstrip("x")) ,16)/100)
-            return(phosphorus_data)
-        except TypeError as e:
-            return("error")
-    def the_soil_potassium(self,test = None):
-        self.write_cmd(POTASSIUM_DATA)
-        time.sleep(0.2)
-        soil_potassium_content = self.read_uart()
-        try:
-            potassium_data = float(int(str(hex(soil_potassium_content[3]).lstrip("0").lstrip("x") + hex(soil_potassium_content[4]).lstrip("0").lstrip("x")) ,16)/100)
-            return(potassium_data)
-        except TypeError as e:
-            return("error")
-    def the_soil_sainity(self,test = None):
-        self.write_cmd(SAINITY_DATA)
-        time.sleep(0.2)
-        soil_sainity = self.read_uart()
-        try:
-            sainity_data = float(int(str(hex(soil_sainity[3]).lstrip("0").lstrip("x") + hex(soil_sainity[4]).lstrip("0").lstrip("x")) ,16)/100)
-            return(sainity_data)
-        except TypeError as e:
-            return("error")
-        
+            # Keep legacy unpadded hex concatenation for compatibility.
+            # A big-endian conversion would change values when the low byte < 16.
+            high = hex(response[3]).lstrip("0").lstrip("x")
+            low = hex(response[4]).lstrip("0").lstrip("x")
+            return float(int(high + low, 16) / divisor)
+        except TypeError:
+            return "error"
+
+    def the_soil_ph(self, test=None):
+        return self._read_measurement(PH_DATA, 10)
+
+    def the_soil_water(self, test=None):
+        return self._read_measurement(MOISTURE_DATA, 10)
+
+    def the_soil_temp(self, test=None):
+        return self._read_measurement(TEMP_DATA, 10)
+
+    def the_soil_conductivity(self, test=None):
+        return self._read_measurement(CONDUCTIVITY_DATA, 10)
+
+    def the_soil_nitrogen(self, test=None):
+        return self._read_measurement(NITROGEN_DATA, 100)
+
+    def the_soil_phosphorus(self, test=None):
+        return self._read_measurement(PHOSPHORUS_DATA, 100)
+
+    def the_soil_potassium(self, test=None):
+        return self._read_measurement(POTASSIUM_DATA, 100)
+
+    def the_soil_sainity(self, test=None):
+        return self._read_measurement(SAINITY_DATA, 100)
+
 if __name__ == "__main__":
     from soil_sensor import the_soil_sensor
     soilsensor = the_soil_sensor(2,4800)
